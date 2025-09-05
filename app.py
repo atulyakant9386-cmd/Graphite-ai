@@ -1,33 +1,31 @@
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from llama_cpp import Llama
-import os
 
 app = FastAPI()
 
-# Serve index.html using absolute path
-@app.get("/")
-async def read_index():
-    return FileResponse(r"C:\Users\HP WORLD\OneDrive\Documents\ch-1\ch1 practice set\index.html")
+# Load your tinyllama model once on startup
+model = Llama(model_path="tinyllama-1.1b-chat-v1.0.Q3_K_S.gguf")
 
-# Load TinyLlama 1.1B Q3_K_S GGUF model (update path if needed)
-llm = Llama(model_path=r"C:\Users\HP WORLD\OneDrive\Documents\ch-1\ch1 practice set\tinyllama-1.1b-chat-v1.0.Q3_K_S.gguf", n_ctx=512)
+# Define the request body schema
+class GenerateRequest(BaseModel):
+    prompt: str
+    max_tokens: int = 100  # optional with default
 
-class ChatRequest(BaseModel):
-    message: str
+# Define the response schema
+class GenerateResponse(BaseModel):
+    generated_text: str
 
-@app.post("/chat")
-async def chat_endpoint(request: ChatRequest):
+@app.post("/generate", response_model=GenerateResponse)
+async def generate_text(request: GenerateRequest):
     try:
-        print("Received message:", request.message)
-        result = llm.create_chat_completion(
-            messages=[{"role": "user", "content": request.message}],
-            max_tokens=100
+        # Call tinyllama to generate text
+        output = model.create_completion(
+            prompt=request.prompt,
+            max_tokens=request.max_tokens
         )
-        reply = result['choices'][0]['message']['content']
-        print("Model reply:", reply)
-        return {"response": reply}
+        # Extract generated text
+        generated = output.choices[0].text
+        return GenerateResponse(generated_text=generated)
     except Exception as e:
-        print("Model error:", e)
-        return {"error": "AI backend error: " + str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
