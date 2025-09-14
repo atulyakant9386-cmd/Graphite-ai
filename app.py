@@ -7,35 +7,51 @@ from llama_cpp import Llama
 
 app = FastAPI()
 
-# Allow CORS for frontend requests (adjust allowed origins in production)
+# Enable CORS for requests from any origin (adjust "allow_origins" for production)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Use exact frontend URLs in production
+    allow_origins=["*"],  # Replace with your frontend domain in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Serve index.html at root path
+# Serve frontend index.html at root
 @app.get("/", response_class=HTMLResponse)
-async def serve_index():
-    with open("index.html", encoding="utf-8") as f:
+async def get_index():
+    with open("index.html", "r", encoding="utf-8") as f:
         return f.read()
 
+# Model file and URL
 model_path = "tinyllama-1.1b-chat-v1.0.Q3_K_S.gguf"
 model_url = "https://huggingface.co/atulyakant9/tinyllama-model/resolve/main/tinyllama-1.1b-chat-v1.0.Q3_K_S.gguf"
 
-# Download model if missing
+# Download model if not exist
 if not os.path.exists(model_path):
-    print("Downloading model...")
+    print("[*] Downloading model...")
     urllib.request.urlretrieve(model_url, model_path)
-    print("Model downloaded successfully.")
+    print("[*] Model downloaded.")
 
-# Load model
-model = Llama(model_path=model_path)
+# Load llama model
+try:
+    model = Llama(model_path=model_path)
+    print("[*] Model loaded successfully.")
+except Exception as e:
+    print(f"[!] Error loading model: {e}")
+    model = None  # So we can detect backend not ready
 
-# API endpoint generating the AI response
 @app.get("/generate")
-async def generate(prompt: str):
-    output = model(prompt=prompt, max_tokens=50)
-    return {"response": output['choices'][0]['text']}
+async def generate_response(prompt: str):
+    if model is None:
+        return {"error": "Model not loaded or backend not ready. Please try again later."}
+    try:
+        output = model(prompt=prompt, max_tokens=50)
+        return {"response": output['choices'][0]['text']}
+    except Exception as e:
+        return {"error": f"Error generating response: {str(e)}"}
+
+# # Uncomment below to test backend integration quickly with dummy response:
+# @app.get("/generate")
+# async def generate_response(prompt: str):
+#     return {"response": f"Echo backend says: {prompt}"}
+
