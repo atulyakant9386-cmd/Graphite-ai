@@ -19,10 +19,11 @@
       --text-color: #e1e8ee;
       --shadow: 0 4px 22px #0a2d2622;
       --border-radius: 16px;
+      --font-family: "Inter", Arial, sans-serif;
     }
     body {
       margin: 0;
-      font-family: "Inter", Arial, sans-serif;
+      font-family: var(--font-family);
       background: var(--main-bg);
       color: var(--text-color);
       display: flex;
@@ -40,6 +41,7 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       text-align: center;
+      user-select: none;
     }
     #chatbox {
       background: var(--chat-bg);
@@ -55,15 +57,21 @@
       flex-direction: column;
       gap: 0.6rem;
       margin-bottom: 1rem;
+      font-size: 1rem;
+      user-select: text;
     }
     .message {
       max-width: 75%;
       padding: 0.75rem 1rem;
       border-radius: var(--border-radius);
       line-height: 1.4;
-      font-size: 1rem;
       word-wrap: break-word;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      white-space: pre-wrap;
+      white-space: -moz-pre-wrap;
+      white-space: -pre-wrap;
+      white-space: -o-pre-wrap;
+      word-wrap: break-word;
     }
     .message.user {
       background: var(--user-msg-bg);
@@ -78,5 +86,158 @@
       border-bottom-left-radius: 4px;
     }
     #input-area {
-      display
+      display: flex;
+      width: 100%;
+      max-width: 600px;
+      gap: 0.5rem;
+    }
+    #chatInput {
+      flex: 1;
+      background: var(--input-bg);
+      border: none;
+      border-radius: var(--border-radius);
+      padding: 0.75rem 1rem;
+      font-size: 1.1rem;
+      color: var(--text-color);
+      outline: none;
+      box-shadow: 0 2px 8px #0001;
+      transition: box-shadow 0.2s;
+      font-family: var(--font-family);
+    }
+    #chatInput:focus {
+      box-shadow: 0 2px 14px #16c09765;
+    }
+    #sendBtn {
+      background: var(--accent);
+      border: none;
+      border-radius: var(--border-radius);
+      color: white;
+      padding: 0 1.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 10px #17b390cc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    #sendBtn:hover:not(:disabled) {
+      background: #13a389;
+      box-shadow: 0 6px 14px #12a47ccc;
+    }
+    #sendBtn:disabled {
+      cursor: default;
+      background: #12594e;
+      box-shadow: none;
+    }
 
+    /* Scrollbar styles for chatbox */
+    #chatbox::-webkit-scrollbar {
+      width: 10px;
+    }
+    #chatbox::-webkit-scrollbar-track {
+      background: #151a1d;
+      border-radius: var(--border-radius);
+    }
+    #chatbox::-webkit-scrollbar-thumb {
+      background: #18c0a6;
+      border-radius: var(--border-radius);
+    }
+    #chatbox::-webkit-scrollbar-thumb:hover {
+      background: #13a389;
+    }
+  </style>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    integrity="sha512-... (use correct integrity hash)"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+</head>
+<body>
+  <h1>Graphite AI Chatbot</h1>
+
+  <div id="chatbox" aria-live="polite" aria-atomic="true"></div>
+
+  <div id="input-area">
+    <input
+      id="chatInput"
+      type="text"
+      placeholder="Type your question..."
+      autocomplete="off"
+      aria-label="Chat input"
+    />
+    <button id="sendBtn" disabled title="Send message" aria-label="Send message">
+      <i class="fas fa-paper-plane" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <script>
+    const backendURL = "https://your-render-app-url"; // REPLACE with your Render backend URL
+
+    const chatInput = document.getElementById("chatInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const chatbox = document.getElementById("chatbox");
+
+    // Enable send button only if input has text
+    chatInput.addEventListener("input", () => {
+      sendBtn.disabled = chatInput.value.trim() === "";
+    });
+
+    // Append message to chatbox with role-based styling
+    function appendMessage(text, sender) {
+      const messageElem = document.createElement("div");
+      messageElem.classList.add("message", sender);
+      messageElem.textContent = text;
+      chatbox.appendChild(messageElem);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    // Async call to FastAPI backend
+    async function queryFastAPI(message) {
+      const response = await fetch(
+        `${backendURL}/generate?prompt=${encodeURIComponent(message)}`,
+        { method: "GET" }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to reach AI backend");
+      }
+      const data = await response.json();
+      if (data.response) {
+        return data.response;
+      } else if (data.error) {
+        throw new Error(data.error);
+      } else {
+        throw new Error("Unexpected response from backend");
+      }
+    }
+
+    async function sendMessage() {
+      const userMessage = chatInput.value.trim();
+      if (!userMessage) return;
+      appendMessage(userMessage, "user");
+      chatInput.value = "";
+      sendBtn.disabled = true;
+      try {
+        const reply = await queryFastAPI(userMessage);
+        appendMessage(reply, "ai");
+      } catch (error) {
+        console.error(error);
+        appendMessage("Error: Could not reach AI backend.", "ai");
+      }
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    chatInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
+
+    // Accessibility: focus input on load
+    chatInput.focus();
+  </script>
+</body>
+</html>
