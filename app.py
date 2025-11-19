@@ -23,8 +23,8 @@ async def serve_index():
         return f.read()
 
 # Model download and loading
-model_path = "tinyllama-1.1b-chat-v1.0.Q3_K_S.gguf"
-model_url = "https://huggingface.co/atulyakant9/tinyllama-model/resolve/main/tinyllama-1.1b-chat-v1.0.Q3_K_S.gguf"
+model_path ="Qwen2-1.5B-Instruct.IQ1_M.gguf"
+model_url ="https://huggingface.co/atulyakant9/Qwen2-1.5B-Instruct.IQ1_M.gguf/blob/main/Qwen2-1.5B-Instruct.IQ1_M.gguf"
 
 if not os.path.exists(model_path):
     print("Downloading model...")
