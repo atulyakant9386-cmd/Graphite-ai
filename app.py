@@ -1,30 +1,28 @@
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-from fastapi.middleware.cors import CORSMiddleware
 import os
 import urllib.request
 from llama_cpp import Llama
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
 # CORS middleware setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change to your frontend URL in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Serve the old frontend index.html
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
     with open("index.html", "r", encoding="utf-8") as f:
         return f.read()
 
-# Model download and loading
-model_path ="Qwen2-1.5B-Instruct.IQ1_M.gguf"
-model_url ="https://huggingface.co/atulyakant9/Qwen2-1.5B-Instruct.IQ1_M.gguf/blob/main/Qwen2-1.5B-Instruct.IQ1_M.gguf"
+model_path = "Qwen2-1.5B-Instruct.IQ1_M.gguf"
+model_url = "https://huggingface.co/atulyakant9/Qwen2-1.5B-Instruct.IQ1_M.gguf/resolve/main/Qwen2-1.5B-Instruct.IQ1_M.gguf"
 
 if not os.path.exists(model_path):
     print("Downloading model...")
@@ -38,7 +36,6 @@ except Exception as e:
     print(f"Failed to load model: {e}")
     model = None
 
-# API endpoint to generate AI response
 @app.get("/generate")
 async def generate(prompt: str):
     if model is None:
