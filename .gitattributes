@@ -1,1 +1,7 @@
+<<<<<<< HEAD
 *.gguf filter=lfs diff=lfs merge=lfs -text
+=======
+tinyllama-1.1b-chat-v1.0.Q3_K_S.gguf filter=lfs diff=lfs merge=lfs -text
+*.exe filter=lfs diff=lfs merge=lfs -text
+Git-2.51.0-64-bit.exe filter=lfs diff=lfs merge=lfs -text
+>>>>>>> 4a8d4416c8798ff21faf8033e19c9bec666c8b5e
