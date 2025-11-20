@@ -21,10 +21,17 @@ async def serve_index():
     with open("index.html", "r", encoding="utf-8") as f:
         return f.read()
 
+# Set to True if you want to download the model if missing
+USE_LOCAL_MODEL = True
+
+# Adjust model_path based on your project folder
+# Example: if model in same folder as app.py
 model_path = "Qwen2-1.5B-Instruct.IQ1_M.gguf"
+
+# URL to download model if needed
 model_url = "https://huggingface.co/atulyakant9/Qwen2-1.5B-Instruct.IQ1_M.gguf/resolve/main/Qwen2-1.5B-Instruct.IQ1_M.gguf"
 
-if not os.path.exists(model_path):
+if not USE_LOCAL_MODEL or not os.path.exists(model_path):
     print("Downloading model...")
     urllib.request.urlretrieve(model_url, model_path)
     print("Model downloaded successfully.")
